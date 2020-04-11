@@ -33,8 +33,7 @@ def generate_scatterplot(X0, y):
             y_val_0.append(X0[i][1])
 
     #Create scatterplot
-    plt.scatter(x_val_0,y_val_0)
-    plt.scatter(x_val_1,y_val_1)
+    plt.scatter(x_val_0, y_val_0, x_val_1, y_val_1)
     plt.show()
 
 
