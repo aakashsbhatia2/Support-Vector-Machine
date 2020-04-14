@@ -25,7 +25,7 @@ def generate_scatterplot(X0, y):
 
     #loop through X0 to create scatterplot related data
     for i in range(len(X0)):
-        if y_temp[i] == 1:
+        if y_temp[i] == 0:
             x_val_1.append(X0[i][0])
             y_val_1.append(X0[i][1])
         else:
@@ -33,7 +33,8 @@ def generate_scatterplot(X0, y):
             y_val_0.append(X0[i][1])
 
     #Create scatterplot
-    plt.scatter(x_val_0, y_val_0, x_val_1, y_val_1)
+    plt.scatter(x_val_0, y_val_0)
+    plt.scatter(x_val_1, y_val_1)
     plt.show()
 
 
