@@ -27,7 +27,7 @@ def create_data():
             X0[i].append(-1)
         else:
             X0[i].append(1)
-        data_final = np.array(X0)
+    data_final = np.array(X0)
     
     return data_final
 
@@ -46,7 +46,7 @@ def split_data(data_final):
     samples_train = data_final[:80]
     return samples_train, samples_test
 
-def train_svm(samples_train, T):
+def train(samples_train, T):
     """
 
     Function to train SVM model.
@@ -74,13 +74,16 @@ def train_svm(samples_train, T):
             
         if (y_i*np.dot(x_i,w)) < 1:
             w[1:] = (1-n_t*lmd)*w[1:] + (n_t*y_i*x_i[1:])
+
+            #Calculating bias independantly
             w[0] = w[0] + (y_i*x_i[0])
         else:
             w = (1-n_t*lmd)*w
 
         min_distance_positive, min_distance_negative, converged = check_support_vectors(samples_train, w)
+    print("=================\n")
     print("Number of iterations to Converge: ", t)
-    generate_scatterplot(samples_train, samples_train, min_distance_negative, min_distance_positive, w,"Train Plot")
+    draw(samples_train, samples_train, min_distance_negative, min_distance_positive, w,"Train Plot")
     return w, min_distance_negative, min_distance_positive
 
 def check_support_vectors(samples_train, w):
@@ -108,19 +111,12 @@ def check_support_vectors(samples_train, w):
         except: 
             pass
 
-    errors = 0    
-    for i in samples_train:
-        prediction = np.dot(i[:-1], w)
-        if prediction<0 and i[-1] == 1:
-            errors +=1
-        elif prediction>0 and i[-1] == -1:
-            errors +=1
-    if round(min_distance_positive,1) == round(min_distance_negative,1) and errors == 0:
-        return round(min_distance_positive)+0.5, round(min_distance_negative)+0.5, True
+    if round(min_distance_positive,1) == round(min_distance_negative,1):
+        return round(min_distance_positive)+0.6, round(min_distance_negative)+0.6, True
     else:
         return 1,1,False
 
-def generate_scatterplot(samples_train, samples_test, min_distance_negative, min_distance_positive, w, plot_type):
+def draw(samples_train, samples_test, min_distance_negative, min_distance_positive, w, plot_type):
     """
 
     Generating the scatter plot for the trained samples and corresponding tested samples
@@ -128,13 +124,13 @@ def generate_scatterplot(samples_train, samples_test, min_distance_negative, min
     """
 
     if plot_type == "Train Plot":
-        plt.scatter(samples_train[:, 1], samples_train[:, 2], c=samples_train[:, 3])
+        plt.scatter(samples_train[:, 1], samples_train[:, 2], c=samples_train[:, 3],  edgecolor="black")
         ax = plt.gca()
+        ax.set_facecolor('red')
+        ax.patch.set_alpha(0.1)
         xlim = ax.get_xlim()
 
         xx = np.linspace(xlim[0], xlim[1])
-        #y = mx + c which is same as w1x + w2y + b = 0
-        #m = w1/w2 and c = b/w2
         yy = -(w[1]/w[2]) * xx - (w[0]/w[2])
         yy1 = min_distance_positive-(w[1]/w[2]) * xx - (w[0]/w[2])
         yy2 = -min_distance_negative-(w[1]/w[2]) * xx - (w[0]/w[2])
@@ -143,9 +139,11 @@ def generate_scatterplot(samples_train, samples_test, min_distance_negative, min
         plt.plot(xx, yy2, c="g", linestyle = "dashed")
         plt.show()
     if plot_type == "Test Plot":
-        plt.scatter(samples_train[:, 1], samples_train[:, 2], c=(samples_train[:, 3]))
-        plt.scatter(samples_test[:, 1], samples_test[:, 2], c='g')
+        plt.scatter(samples_train[:, 1], samples_train[:, 2], c=(samples_train[:, 3]), edgecolor="black")
+        plt.scatter(samples_test[:, 1], samples_test[:, 2], c='r', marker="D", edgecolor="black")
         ax = plt.gca()
+        ax.set_facecolor('red')
+        ax.patch.set_alpha(0.1)
         xlim = ax.get_xlim()
 
         xx = np.linspace(xlim[0], xlim[1])
@@ -158,7 +156,7 @@ def generate_scatterplot(samples_train, samples_test, min_distance_negative, min
         plt.show()
         
 
-def test_svm(sample_train, samples_test, w, min_distance_negative, min_distance_positive, plot_type):
+def test(sample_train, samples_test, w, min_distance_negative, min_distance_positive, plot_type):
     """
 
     Function to test SVM Model
@@ -171,8 +169,11 @@ def test_svm(sample_train, samples_test, w, min_distance_negative, min_distance_
             errors +=1
         elif prediction>0 and i[-1] == -1:
             errors +=1
-    print(errors)
-    generate_scatterplot(sample_train, samples_test, min_distance_negative, min_distance_positive, w, plot_type)
+    print("\nTotal Points trained: ", len(sample_train))
+    print("\nTotal Points tested: ", len(samples_test))
+    print("\nTotal Points Misclassified: ", errors)
+    print("\n=================")
+    draw(sample_train, samples_test, min_distance_negative, min_distance_positive, w, plot_type)
     
 
 
@@ -185,10 +186,10 @@ def main():
     samples_train, samples_test = split_data(data_final)
 
     #Calculate weight vector and Support vectors by training model. T = 150,000
-    w, min_distance_negative, min_distance_positive = train_svm(samples_train, T = 150000)
+    w, min_distance_negative, min_distance_positive = train(samples_train, T = 150000)
 
     #Test SVM Model
-    test_svm(samples_train, samples_test, w, min_distance_negative, min_distance_positive, "Test Plot")
+    test(samples_train, samples_test, w, min_distance_negative, min_distance_positive, "Test Plot")
 
 if __name__ == '__main__':
     main()
