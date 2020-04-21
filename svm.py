@@ -1,55 +1,62 @@
-#Libraries
+"""
+
+Imported Libraries
+
+"""
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.datasets import make_blobs
 import random
 import math
 
-def create_data():
-    X0, y = make_blobs(n_samples=100, n_features = 2, centers=2, cluster_std=1.05, random_state=10)
-    
-    positive_x =[]
-    negative_x =[]
-    for i,label in enumerate(y):
-        if label == 0:
-            negative_x.append(X0[i])
-        else:
-            positive_x.append(X0[i])
-    data_dict = {-1:np.array(negative_x), 1:np.array(positive_x)}
-    
-    list_vals = []
-    for i in data_dict:
-        if i == -1:
-            for val in data_dict[i]:
-                val= val.tolist()
-                val.append(-1)
-                val.insert(0,1)
-                list_vals.append(val)
-        else:
-            for val in data_dict[i]:
-                val = val.tolist()
-                val.append(1)
-                val.insert(0,1)
-                list_vals.append(val)
-    data_final = np.array(list_vals)
 
+def create_data():
+    """
+
+    Function to create data.
+    - Here, X0 and y hold the initial points created by make_blobs
+    - A np.array is created using X0 and y which contains data of the form [1, x1, x2, y] and is stored in data_final
+    - This function returns data_final
+
+    """
+    X0, y = make_blobs(n_samples=100, n_features = 2, centers=2, cluster_std=1.05, random_state=10)
+    X0 = X0.tolist()
+    for i in range(len(X0)):
+        X0[i].insert(0, 1)
+        if y[i] == 0:
+            X0[i].append(-1)
+        else:
+            X0[i].append(1)
+        data_final = np.array(X0)
+    
     return data_final
 
 def split_data(data_final):
+
+    """
+
+    Function to split data.
+    - The fina_data array is split into the training dataset and testing dataset
+    - 80% train 
+    - 20% test
+    - The data is split AFTER shuffling [code in main function]
+
+    """
     samples_test = data_final[80:]
     samples_train = data_final[:80]
-    samples_test = samples_test.tolist()
-
-    for i in range(len(samples_test)):
-        if samples_test[i][-1] == -1:
-            samples_test[i].append(-2)
-        else:
-            samples_test[i].append(2)
-    samples_test = np.array(samples_test)
-    #print(samples_test)
     return samples_train, samples_test
 
 def train_svm(samples_train, T):
+    """
+
+    Function to train SVM model.
+    - This function takes input as the training samples and number of epochs
+    - While the algorithm has not converged (i.e. we have not found the optimal hyperplane)
+    - A random point is select
+    - If y*(<w,x>) <1: We update weight vector
+    - Check if the support vector is on either side, equidistant and the hyperplane perfectly seperates the two clusters
+    - terminate
+    """
     w = np.array([0,0,0])
     lmd = 3
     converged = False
@@ -77,6 +84,12 @@ def train_svm(samples_train, T):
     return w, min_distance_negative, min_distance_positive
 
 def check_support_vectors(samples_train, w):
+    """
+
+    Here, we identify the support vectors for each weight vectort and see if it is equidistant from w
+
+    """
+
     min_distance_positive = 999.0
     min_distance_negative = 999.0
     
@@ -108,6 +121,12 @@ def check_support_vectors(samples_train, w):
         return 1,1,False
 
 def generate_scatterplot(samples_train, samples_test, min_distance_negative, min_distance_positive, w, plot_type):
+    """
+
+    Generating the scatter plot for the trained samples and corresponding tested samples
+
+    """
+
     if plot_type == "Train Plot":
         plt.scatter(samples_train[:, 1], samples_train[:, 2], c=samples_train[:, 3])
         ax = plt.gca()
@@ -125,13 +144,11 @@ def generate_scatterplot(samples_train, samples_test, min_distance_negative, min
         plt.show()
     if plot_type == "Test Plot":
         plt.scatter(samples_train[:, 1], samples_train[:, 2], c=(samples_train[:, 3]))
-        plt.scatter(samples_test[:, 1], samples_test[:, 2], c=samples_test[:, 4])
+        plt.scatter(samples_test[:, 1], samples_test[:, 2], c='g')
         ax = plt.gca()
         xlim = ax.get_xlim()
 
         xx = np.linspace(xlim[0], xlim[1])
-        #y = mx + c which is same as w1x + w2y + b = 0
-        #m = w1/w2 and c = b/w2
         yy = -(w[1]/w[2]) * xx - (w[0]/w[2])
         yy1 = min_distance_positive-(w[1]/w[2]) * xx - (w[0]/w[2])
         yy2 = -min_distance_negative-(w[1]/w[2]) * xx - (w[0]/w[2])
@@ -142,12 +159,17 @@ def generate_scatterplot(samples_train, samples_test, min_distance_negative, min
         
 
 def test_svm(sample_train, samples_test, w, min_distance_negative, min_distance_positive, plot_type):
+    """
+
+    Function to test SVM Model
+
+    """
     errors = 0
     for i in samples_test:
-        prediction = np.dot(i[:-2], w)
-        if prediction<0 and i[-2] == 1:
+        prediction = np.dot(i[:-1], w)
+        if prediction<0 and i[-1] == 1:
             errors +=1
-        elif prediction>0 and i[-2] == -1:
+        elif prediction>0 and i[-1] == -1:
             errors +=1
     print(errors)
     generate_scatterplot(sample_train, samples_test, min_distance_negative, min_distance_positive, w, plot_type)
@@ -155,10 +177,17 @@ def test_svm(sample_train, samples_test, w, min_distance_negative, min_distance_
 
 
 def main():
+
+    #Generate dataset
     data_final = create_data()
-    np.random.shuffle(data_final)
+    
+    #Generate Train and Test splot
     samples_train, samples_test = split_data(data_final)
-    w, min_distance_negative, min_distance_positive = train_svm(samples_train, 150000)
+
+    #Calculate weight vector and Support vectors by training model. T = 150,000
+    w, min_distance_negative, min_distance_positive = train_svm(samples_train, T = 150000)
+
+    #Test SVM Model
     test_svm(samples_train, samples_test, w, min_distance_negative, min_distance_positive, "Test Plot")
 
 if __name__ == '__main__':
